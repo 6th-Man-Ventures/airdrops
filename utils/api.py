@@ -7,7 +7,7 @@ import statsmodels.api as stat
 functions to retrieve and process data from the CoinGecko API. 
 """
 
-KEY = "CG-WA8nJmbPeAyNbHKeo5gxMyJQ"
+KEY = "your-api-key-here"
 
 
 def to_unix(date: datetime) -> int:
