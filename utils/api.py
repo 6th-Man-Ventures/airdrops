@@ -38,8 +38,6 @@ def get_historical_data(id: str, start: datetime, end: datetime) -> pd.DataFrame
     if KEY is None: 
         raise(Exception("No API Key Specified."))
     
-    window_length = (end - start).days
-
     start, end = to_unix(start), to_unix(end)
     res = requests.get(f"https://pro-api.coingecko.com/api/v3/coins/{id}/market_chart/range?interval=daily&vs_currency=usd&from={start}&to={end}&x_cg_pro_api_key={KEY}")
     eth_res = requests.get(f"https://pro-api.coingecko.com/api/v3/coins/ethereum/market_chart/range?interval=daily&vs_currency=usd&from={start}&to={end}&x_cg_pro_api_key={KEY}") 
@@ -51,8 +49,6 @@ def get_historical_data(id: str, start: datetime, end: datetime) -> pd.DataFrame
 
 
     prices = res.json()["prices"]
-    mktcaps = res.json()["market_caps"]
-    volumes = res.json()["total_volumes"]
     eth_prices = eth_res.json()["prices"]
     btc_prices = btc_res.json()["prices"]
     
@@ -66,28 +62,21 @@ def get_historical_data(id: str, start: datetime, end: datetime) -> pd.DataFrame
         eth_col.append(eth[1])
         btc_col.append(btc[1])
 
-    data_dict = {
+    df = pd.DataFrame({
         "date" : date_col,
         "price" : price_col,
         'eth': eth_col,
         'btc': btc_col
         
-    }
-    
-    df = pd.DataFrame(data_dict)
+    })
+
     df = df.set_index('date')
-
-    
     normed = normalize_macro(df)
-    normed['pct_change_price'] = ((normed['adj_price'] - normed['adj_price'].iat[0]) / normed['adj_price'].iat[0])
 
-    if len(normed['price']) != window_length:
-        print(date_col)
-        raise(Exception(f"{id}: expected {window_length} data points. Received {len(normed['price'])} \n {normed['price']}"))
+    # add pct change from first day column
+    normed['pct_change_price'] = ((normed['adj_price'] - normed['adj_price'].iat[0]) / 
+                                normed['adj_price'].iat[0])
 
-    
-    print(id, res)
-    
     return normed  
 
 def normalize_macro(df):
